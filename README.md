@@ -80,27 +80,6 @@ Required columns:
 3. Set main file: `app.py`
 4. Add secrets in the dashboard if using email OTP (`.streamlit/secrets.toml`)
 
-### Render
-
-Uses `render.yaml` — connect repo and deploy as a Web Service.
-
-### Railway
-
-Uses `Procfile` — deploy with:
-
-```bash
-railway up
-```
-
-## Email OTP (Optional)
-
-Create `.streamlit/secrets.toml`:
-
-```toml
-EMAIL_ADDRESS = "your@gmail.com"
-EMAIL_PASSWORD = "your-app-password"
-```
-
 ## Requirements
 
 - Python 3.10+
