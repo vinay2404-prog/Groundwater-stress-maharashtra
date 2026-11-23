@@ -68,8 +68,23 @@ def init_state() -> None:
 
 
 def navigate(page: str) -> None:
+    """Switch the active page.
+
+    Used as a button callback so the widget-backed session key is updated
+    before the navigation radio is instantiated. Assigning it directly from
+    inside the page body would raise a StreamlitAPIException.
+    """
+
     st.session_state["main_navigation"] = page
-    st.rerun()
+
+
+def reset_filters(years: list[int]) -> None:
+    """Reset sidebar filters (runs as a widget callback)."""
+
+    st.session_state["global_districts"] = []
+
+    if years:
+        st.session_state["global_year_range"] = (min(years), max(years))
 
 
 def topbar() -> None:
@@ -147,19 +162,21 @@ def home_page() -> None:
         c1, c2 = st.columns(2)
 
         with c1:
-            if st.button(
+            st.button(
                 "📊 Explore Dashboard",
                 type="primary",
                 use_container_width=True,
-            ):
-                navigate("State Dashboard")
+                on_click=navigate,
+                args=("State Dashboard",),
+            )
 
         with c2:
-            if st.button(
+            st.button(
                 "🗺️ Explore Districts",
                 use_container_width=True,
-            ):
-                navigate("Regional Explorer")
+                on_click=navigate,
+                args=("Regional Explorer",),
+            )
 
     st.divider()
 
@@ -332,19 +349,12 @@ def sidebar_navigation(df: pd.DataFrame) -> str:
                     key="global_year_range",
                 )
 
-            if st.button(
+            st.button(
                 "Reset Filters",
                 use_container_width=True,
-            ):
-                st.session_state["global_districts"] = []
-
-                if years:
-                    st.session_state["global_year_range"] = (
-                        min(years),
-                        max(years),
-                    )
-
-                st.rerun()
+                on_click=reset_filters,
+                args=(years,),
+            )
 
         st.divider()
 

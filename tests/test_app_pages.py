@@ -8,11 +8,13 @@ fresh app for every page so that order cannot hide a problem.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from streamlit.testing.v1 import AppTest
 
-APP_FILE = r"C:\Users\ashok\OneDrive\Desktop\JALNETRA-main\app.py"
+APP_FILE = str(Path(__file__).resolve().parents[1] / "app.py")
 
 # Pages that must work on a cold start, with nothing in session state.
 COLD_START_PAGES = [

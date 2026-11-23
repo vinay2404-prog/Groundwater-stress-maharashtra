@@ -21,7 +21,6 @@ def metric_card(label, value, delta=None, help_text=None):
             value=value,
             delta=delta,
             help=help_text,
-            border=False,
         )
 
 

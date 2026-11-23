@@ -47,7 +47,7 @@ WATER/
 ├── config.py           # Constants and paths
 ├── utils.py            # Shared helpers
 ├── data/               # Groundwater datasets
-├── pages/              # Streamlit sub-pages
+├── page_modules/       # Reusable Streamlit page modules
 └── requirements.txt
 ```
 
@@ -78,7 +78,32 @@ Required columns:
 1. Push the repo to GitHub
 2. Connect at [share.streamlit.io](https://share.streamlit.io)
 3. Set main file: `app.py`
-4. Add secrets in the dashboard if using email OTP (`.streamlit/secrets.toml`)
+4. In **Advanced settings**, select Python **3.11** or **3.12**
+5. Add secrets in the dashboard if using email OTP (`.streamlit/secrets.toml`)
+
+`packages.txt` installs the system `libgomp1` library required by XGBoost on
+Streamlit Cloud's Linux environment.
+
+### Render
+
+Uses `render.yaml` — connect repo and deploy as a Web Service.
+
+### Railway
+
+Uses `Procfile` — deploy with:
+
+```bash
+railway up
+```
+
+## Email OTP (Optional)
+
+Create `.streamlit/secrets.toml`:
+
+```toml
+EMAIL_ADDRESS = "your@gmail.com"
+EMAIL_PASSWORD = "your-app-password"
+```
 
 ## Requirements
 
