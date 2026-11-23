@@ -2,6 +2,7 @@ import streamlit as st
 
 import plotly.express as px
 
+from ui_enhancements import PLOTLY_THEME
 from visualization import COL_DISTRICT, COL_YEAR
 
 DISTRICT_COORDS = {
@@ -128,7 +129,7 @@ def district_map(df, color_col="Groundwater Category"):
                 title=f"District Groundwater Map ({latest_year})",
             )
             fig.update_geos(fitbounds="locations", visible=False)
-            fig.update_layout(margin=dict(l=0, r=0, t=40, b=0), height=600)
+            layout = PLOTLY_THEME.copy(); layout.pop("margin", None); fig.update_layout(margin=dict(l=0, r=0, t=40, b=0), height=600, **layout)
             st.plotly_chart(fig, use_container_width=True)
             return
         except Exception:
@@ -154,5 +155,5 @@ def district_map(df, color_col="Groundwater Category"):
         title=f"District Groundwater Map ({latest_year})",
         map_style="carto-positron",
     )
-    fig.update_layout(margin=dict(l=0, r=0, t=40, b=0))
+    layout = PLOTLY_THEME.copy(); layout.pop("margin", None); fig.update_layout(margin=dict(l=0, r=0, t=40, b=0), **layout)
     st.plotly_chart(fig, use_container_width=True)

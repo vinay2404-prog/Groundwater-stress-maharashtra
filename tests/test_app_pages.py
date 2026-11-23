@@ -16,11 +16,11 @@ APP_FILE = r"C:\Users\ashok\OneDrive\Desktop\JALNETRA-main\app.py"
 
 # Pages that must work on a cold start, with nothing in session state.
 COLD_START_PAGES = [
-    "Query History",
-    "Assessments",
-    "AI ChatBot",
-    "Dashboard",
-    "Download Center",
+    "Data & Reports",
+    "Data & Reports",
+    "AI Assistant",
+    "State Dashboard",
+    "Data & Reports",
 ]
 
 
@@ -39,14 +39,14 @@ def test_page_opens_on_a_fresh_session(page):
 
 
 def test_query_history_on_a_fresh_session_shows_the_empty_state():
-    at = _open("Query History")
+    at = _open("Data & Reports")
     assert not at.exception
     assert any("No query history yet" in info.value for info in at.info)
 
 
 def test_chatbot_uses_its_own_greeting():
     """The chat page must not inherit a stale greeting from elsewhere."""
-    at = _open("AI ChatBot")
+    at = _open("AI Assistant")
     assert not at.exception
     text = "\n".join(markdown.value for markdown in at.markdown)
     assert "groundwater intelligence assistant" in text.lower()
@@ -54,7 +54,7 @@ def test_chatbot_uses_its_own_greeting():
 
 
 def test_clear_history_button_works_on_a_fresh_session():
-    at = _open("Query History")
+    at = _open("Data & Reports")
     assert not at.exception
     at.button[0].click()
     at.run()

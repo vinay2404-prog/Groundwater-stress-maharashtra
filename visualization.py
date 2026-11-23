@@ -14,6 +14,7 @@ from utils import metric_label
 from ui_enhancements import PLOTLY_THEME
 
 
+
 def category_metrics(df):
     if df.empty or COL_CATEGORY not in df.columns:
         return
@@ -64,19 +65,18 @@ def trend_chart(df: pd.DataFrame, metrics: list[str], title: str):
     fig.update_xaxes(type="category")
     fig.update_xaxes(
         type="category",
-        title_font=dict(color="black", size=14),
-        tickfont=dict(color="black", size=12),
+        
     )
 
     fig.update_yaxes(
-        title_font=dict(color="black", size=14), tickfont=dict(color="black", size=12)
+        
     )
 
     fig.update_layout(**PLOTLY_THEME)
     fig.update_layout(
         paper_bgcolor="white",
         plot_bgcolor="white",
-        font=dict(color="#111111"),
+        font=dict(color="black"),
     )
 
     return fig
@@ -175,18 +175,17 @@ def forecast_chart(
 
     fig.update_xaxes(
         type="category",
-        title_font=dict(color="black", size=14),
-        tickfont=dict(color="black", size=12),
+        
     )
 
     fig.update_yaxes(
-        title_font=dict(color="black", size=14), tickfont=dict(color="black", size=12)
+        
     )
     fig.update_layout(**PLOTLY_THEME)
     fig.update_layout(
         paper_bgcolor="white",
         plot_bgcolor="white",
-        font=dict(color="#111111"),
+        font=dict(color="black"),
     )
     return fig
 
@@ -216,18 +215,17 @@ def multi_metric_forecast_chart(forecast: pd.DataFrame, entity: str):
     fig.update_xaxes(type="category")
     fig.update_xaxes(
         type="category",
-        title_font=dict(color="black", size=14),
-        tickfont=dict(color="black", size=12),
+        
     )
 
     fig.update_yaxes(
-        title_font=dict(color="black", size=14), tickfont=dict(color="black", size=12)
+        
     )
     fig.update_layout(**PLOTLY_THEME)
     fig.update_layout(
         paper_bgcolor="white",
         plot_bgcolor="white",
-        font=dict(color="#111111"),
+        font=dict(color="black"),
     )
     return fig
 
@@ -247,7 +245,7 @@ def risk_heatmap(risk_df: pd.DataFrame):
     fig.update_layout(
         paper_bgcolor="white",
         plot_bgcolor="white",
-        font=dict(color="#111111"),
+        font=dict(color="black"),
     )
     return fig
 
@@ -287,7 +285,7 @@ def stage_gauge(stage: float, title: str = "Extraction Stage"):
     fig.update_layout(
         paper_bgcolor="white",
         plot_bgcolor="white",
-        font=dict(color="#111111"),
+        font=dict(color="black"),
     )
     return fig
 

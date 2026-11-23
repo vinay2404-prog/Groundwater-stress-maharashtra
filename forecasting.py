@@ -10,7 +10,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-from sklearn.metrics import mean_absolute_error
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from xgboost import XGBRegressor
 
 from config import FORECAST_METRICS, FORECAST_YEARS, HISTORICAL_YEARS
@@ -426,3 +426,85 @@ def forecast_district(
     forecast = forecast.copy()
     forecast["Predicted Stage"] = forecast["Extraction Stage Numeric"]
     return forecast
+
+
+def evaluate_forecasting(df, test_years=None, target="Extraction Stage Numeric"):
+    """Chronological holdout evaluation of XGBoost vs persistence baseline.
+
+    For each test year, models are trained only on data from earlier years.
+    Predictions are compared against actual observed values. No future
+    information is used during feature construction.
+    """
+    if test_years is None:
+        test_years = [2024, 2025]
+
+    records = []
+    for test_year in test_years:
+        train_df = df[df["Year"] < test_year].copy()
+        if train_df.empty:
+            continue
+        try:
+            models, _ = _get_models(train_df)
+        except Exception:
+            continue
+        if not models:
+            continue
+
+        for district in sorted(df["District"].dropna().unique()):
+            series = _prepare_series(df, district)
+            history = series[series["Year"] < test_year]
+            actual_rows = series[series["Year"] == test_year]
+            if history.empty or actual_rows.empty:
+                continue
+            actual = float(actual_rows.iloc[0][target])
+            preds = _predict_next_year(models, history, _entity_key(district, "District Level"), test_year)
+            predicted = float(preds.get(target, float("nan")))
+            baseline = float(history.sort_values("Year").iloc[-1][target])
+            records.append(
+                {
+                    "District": district,
+                    "Year": test_year,
+                    "Actual": actual,
+                    "Predicted_XGBoost": predicted,
+                    "Predicted_Persistence": baseline,
+                }
+            )
+
+    result_df = pd.DataFrame(records)
+    if result_df.empty:
+        return {
+            "metrics": {},
+            "predictions": result_df,
+            "test_years": test_years,
+            "n_observations": 0,
+            "note": "Insufficient data for chronological evaluation.",
+        }
+
+    metrics = {}
+    for name, col in [("xgboost", "Predicted_XGBoost"), ("persistence", "Predicted_Persistence")]:
+        valid = result_df.dropna(subset=["Actual", col])
+        if valid.empty:
+            continue
+        y_true = valid["Actual"].to_numpy()
+        y_pred = valid[col].to_numpy()
+        mae = float(mean_absolute_error(y_true, y_pred))
+        rmse = float(np.sqrt(mean_squared_error(y_true, y_pred)))
+        r2 = float(r2_score(y_true, y_pred)) if len(y_true) > 1 else float("nan")
+        metrics[name] = {
+            "mae": round(mae, 4),
+            "rmse": round(rmse, 4),
+            "r2": round(r2, 4) if r2 == r2 else None,
+            "n": int(len(y_true)),
+        }
+
+    return {
+        "metrics": metrics,
+        "predictions": result_df,
+        "test_years": test_years,
+        "n_observations": int(len(result_df)),
+        "note": (
+            "Evaluation uses only 2024-2025 as holdout years because the dataset contains "
+            "five annual observations per district. Training metrics from the full-data "
+            "model are not reported as validation metrics."
+        ),
+    }

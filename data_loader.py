@@ -108,7 +108,11 @@ def load_all_data(data_dir: Path | None = None) -> pd.DataFrame:
     for path in files:
         logger.info("Loading data file: %s", path.name)
         raw = _read_file(path)
-        frames.append(clean_dataframe(raw))
+        try:
+            frames.append(clean_dataframe(raw))
+        except ValueError as exc:
+            logger.warning("Skipping %s: %s", path.name, exc)
+            continue
 
     combined = pd.concat(frames, ignore_index=True)
     combined = combined.drop_duplicates(

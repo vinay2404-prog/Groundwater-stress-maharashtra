@@ -307,32 +307,56 @@ class JalnetraChatbot:
 
     def _handle_risk(self, query: str) -> str:
         target_year = extract_year(query) or 2030
+
         risk_df = get_at_risk_districts(
-            self.df, target_year=target_year, min_risk="High"
+            self.df,
+            target_year=target_year,
+            min_risk="High",
         )
+
         if risk_df.empty:
-            return f"No districts are projected at High or Critical risk in **{target_year}** based on current models."
+            return (
+                f"No districts are projected at High or Critical risk "
+                f"in {target_year}, based on the current models."
+            )
 
         fig = risk_heatmap(risk_df.head(15))
         st.plotly_chart(fig, use_container_width=True)
+
         display_df = risk_df.copy()
 
-        if "Year" in display_df.columns:
-            display_df["Year"] = display_df["Year"].astype(int).astype(str)
+        stage_column = f"Predicted Stage {target_year}"
 
-        st.dataframe(display_df, use_container_width=True, hide_index=True)
+        if stage_column not in display_df.columns:
+            stage_column = "Predicted Stage 2030"
+
+        if "Year" in display_df.columns:
+            display_df["Year"] = display_df["Year"].astype(str)
+
+        st.dataframe(
+            display_df,
+            use_container_width=True,
+            hide_index=True,
+        )
 
         lines = [
-            f"**Districts at Future Groundwater Risk ({target_year})**",
+            f"**Future Groundwater Risk Assessment — {target_year}**",
             "",
-            "The following districts are projected to reach High or Critical extraction stages:",
+            "Districts projected to reach High or Critical risk:",
             "",
         ]
+
         for _, row in risk_df.head(10).iterrows():
+
+            stage = row.get(stage_column, "N/A")
+
             lines.append(
-                f"- **{row['District']}** — Stage {row['Predicted Stage 2030']}%, "
-                f"{row['Predicted Category']} ({row['Risk Level']} risk)"
+                f"- **{row['District']}** — "
+                f"Stage: {stage}% | "
+                f"{row['Predicted Category']} | "
+                f"{row['Risk Level']} risk"
             )
+
         return "\n".join(lines)
 
     def _handle_graph(self, query: str) -> str:
@@ -407,9 +431,6 @@ class JalnetraChatbot:
                     display_df["Year"] = display_df["Year"].astype(int).astype(str)
 
                 st.dataframe(display_df, use_container_width=True, hide_index=True)
-                from query_engine import show_graph
-
-                show_graph(self.df, taluka, "Total Extraction (MCM)", level="taluka")
                 return (
                     f"Showing dataset records for **{taluka}** ({record['District']})."
                 )
@@ -441,9 +462,6 @@ class JalnetraChatbot:
                     f"{metric_label(column)}: **{format_number(value)}{suffix}**"
                 )
 
-            from query_engine import show_graph
-
-            show_graph(self.df, taluka, "Total Extraction (MCM)", level="taluka")
             return format_record_response(record, f"Taluka Overview — {taluka}")
 
         if district:
@@ -559,15 +577,16 @@ class JalnetraChatbot:
             response = self._handle_rank(cleaned)
         elif intent == "compare":
             response = self._handle_compare(cleaned)
+        elif "trend" in cleaned or "r trend" in cleaned:
+            response = self._handle_trend(cleaned)
         elif (
-            intent == "trend"
-            or "next 5" in cleaned
+            "next 5" in cleaned
             or "5-year" in cleaned
             or "5 year" in cleaned
         ):
             response = (
                 self._handle_trend(cleaned)
-                if intent != "forecast"
+                if "trend" in cleaned
                 else self._handle_forecast(cleaned)
             )
         elif intent == "forecast":
@@ -595,38 +614,42 @@ def process_query(query: str, df: pd.DataFrame) -> str:
     return bot.answer(query)
 
 
+
+
 def chatbot_ui(df: pd.DataFrame) -> None:
-    """Streamlit chat UI."""
-    st.markdown("### JALNETRA AI Assistant")
-    st.caption(
-        "Answers are generated only from project datasets and forecasting models."
-    )
-
+    st.title("JALNETRA AI Assistant")
+    st.caption("Groundwater Intelligence - Data-Grounded Query Assistant")
+    if df.empty:
+        st.warning("No groundwater records are available.")
+        return
     if "messages" not in st.session_state:
-        st.session_state.messages = [
-            {
-                "role": "assistant",
-                "content": (
-                    "Hello! I'm **JALNETRA**, your groundwater intelligence assistant. "
-                    "Ask me about districts, talukas, trends, rankings, or future forecasts."
-                ),
-            }
-        ]
-
+        st.session_state.messages = [{"role": "assistant", "content": "Hello! I'm JALNETRA, your groundwater intelligence assistant."}]
+    latest_year = int(df["Year"].max())
+    with st.container(border=True):
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Districts", df["District"].nunique())
+        c2.metric("Talukas", df["Taluka"].nunique())
+        c3.metric("Latest Data Year", latest_year)
+    st.caption("Source: groundwater resource assessment dataset (2021-2025). Methodology: data-grounded analytics and XGBoost forecasting.")
+    if st.button("Export conversation"):
+        text = "\n\n".join(f"{m['role']}: {m['content']}" for m in st.session_state.messages)
+        st.download_button("Download", text, file_name="chat_history.txt")
+    st.markdown("### Suggested questions")
+    for q in ["Show Pune recharge in 2024", "Top 10 districts by extraction stage", "Which districts are at future groundwater risk?"]:
+        st.caption(q)
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-    prompt = st.chat_input("Ask about groundwater data, trends, or forecasts...")
-    if not prompt:
-        return
-
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
-
-    response = process_query(prompt, df)
-    with st.chat_message("assistant"):
-        st.markdown(response)
-
-    st.session_state.messages.append({"role": "assistant", "content": response})
+    prompt = st.chat_input("Ask about groundwater, districts, trends or forecasts...")
+    if prompt:
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
+        with st.chat_message("assistant"):
+            try:
+                response = process_query(prompt, df)
+            except Exception as exc:
+                response = "The query could not be completed."
+            st.markdown(response)
+        st.session_state.messages.append({"role": "assistant", "content": response})

@@ -252,7 +252,12 @@ def format_ranking_response(ranked: pd.DataFrame, metric: str, level: str) -> st
     if ranked.empty:
         return "No ranking data available for the requested filters."
 
-    lines = [f"**Top {len(ranked)} by {metric_label(metric)} ({level.title()} level)**", ""]
+    lines = [
+        f"**Top {len(ranked)} by average {metric_label(metric)} ({level.title()} level)**",
+        "",
+        "Values are averaged across talukas/years in the selected data.",
+        "",
+    ]
     for _, row in ranked.iterrows():
         if level == "district":
             label = row["District"]
